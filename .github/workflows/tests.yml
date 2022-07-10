@@ -12,12 +12,12 @@ jobs:
       - name: 📦 Install Dependencies
         run: |
           dart pub global activate very_good_cli
-          dart pub global very_good packages get
+          dart pub global run very_good packages get
       - name: ✨ Check Formatting
         run: dart format --set-exit-if-changed .
       - name: 🕵️ Analyze
         run: dart analyze --fatal-infos --fatal-warnings .
       - name: 🧪 Run Tests
-        run: dart pub global very_good test --coverage
+        run: dart pub global run very_good test --coverage
       - name: 📊 Upload Code Coverage
         uses: codecov/codecov-action@v2
