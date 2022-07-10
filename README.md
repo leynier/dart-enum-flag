@@ -3,6 +3,7 @@
 [![style: very good analysis][very_good_analysis_badge]][very_good_analysis_link]
 [![License: MIT][license_badge]][license_link]
 [![Tests](https://github.com/leynier/dart-enum-flag/actions/workflows/tests.yml/badge.svg)](https://github.com/leynier/dart-enum-flag/actions/workflows/tests.yml)
+[![Codecov](https://codecov.io/gh/leynier/dart-enum-flag/branch/main/graph/badge.svg?token=Llxe6rjE9g)](https://codecov.io/gh/leynier/dart-enum-flag)
 
 Package to create enum for flags.
 
