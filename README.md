@@ -2,6 +2,7 @@
 
 [![style: very good analysis][very_good_analysis_badge]][very_good_analysis_link]
 [![License: MIT][license_badge]][license_link]
+[![Tests](https://github.com/leynier/dart-enum-flag/actions/workflows/tests.yml/badge.svg)](https://github.com/leynier/dart-enum-flag/actions/workflows/tests.yml)
 
 Package to create enum for flags.
 
