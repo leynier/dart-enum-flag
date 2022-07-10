@@ -12,7 +12,7 @@ jobs:
       - name: 🤖 Setup Very Good CLI
         run: dart pub global activate very_good_cli
       - name: 📦 Install Dependencies
-        run: very_good packages get
+        run: dart pub get
       - name: ✨ Check Formatting
         run: dart format --set-exit-if-changed .
       - name: 🕵️ Analyze
