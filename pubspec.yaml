@@ -1,5 +1,6 @@
 name: enum_flag
 description: Package for create enum for flags
+repository: https://github.com/leynier/dart-enum-flag
 version: 1.0.0
 
 environment:
