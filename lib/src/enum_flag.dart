@@ -1,4 +1,4 @@
-/// Abstract class for use how mixin for [Enum] flags
+/// Mixin for [Enum] flags
 ///
 /// Example:
 ///
@@ -17,10 +17,7 @@
 /// print(EnumX.one.value | EnumX.two.value); // 3
 /// print(EnumX.one.value | EnumX.three.value); // 5
 /// ```
-abstract class EnumFlag extends Object {
-  /// Abstract property that returns the [Enum] value
-  int get index;
-
+mixin EnumFlag on Enum {
   /// Return the value of the [EnumFlag]
   int get value => 1 << index;
 }
