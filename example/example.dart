@@ -27,13 +27,16 @@ void main() {
   print('\n=== Combining Flags ===');
   final readWrite = Permission.read.value | Permission.write.value;
   print('read | write = $readWrite'); // 3
-  print('[read, write].flag = ${[Permission.read, Permission.write].flag}'); // 3
+  print(
+      '[read, write].flag = ${[Permission.read, Permission.write].flag}'); // 3
   print('All permissions: ${Permission.values.all}'); // 15
 
   // Checking flags
   print('\n=== Checking Flags ===');
-  print('$readWrite hasFlag(read): ${readWrite.hasFlag(Permission.read)}'); // true
-  print('$readWrite hasFlag(execute): ${readWrite.hasFlag(Permission.execute)}'); // false
+  print(
+      '$readWrite hasFlag(read): ${readWrite.hasFlag(Permission.read)}'); // true
+  print(
+      '$readWrite hasFlag(execute): ${readWrite.hasFlag(Permission.execute)}'); // false
 
   // hasAnyFlag and hasAllFlags
   print('\n=== hasAnyFlag / hasAllFlags ===');
@@ -47,8 +50,10 @@ void main() {
 
   // Getting active flags
   print('\n=== Getting Flags ===');
-  print('$flags getFlags: ${flags.getFlags(Permission.values)}'); // [read, write]
-  print('7.getFlags: ${7.getFlags(Permission.values)}'); // [read, write, execute]
+  print(
+      '$flags getFlags: ${flags.getFlags(Permission.values)}'); // [read, write]
+  print(
+      '7.getFlags: ${7.getFlags(Permission.values)}'); // [read, write, execute]
 
   // Manipulating flags
   print('\n=== Manipulating Flags ===');
@@ -74,5 +79,6 @@ void main() {
   print('\n=== Describing Flags ===');
   print('0: ${0.describeFlags(Permission.values)}'); // none
   print('3: ${3.describeFlags(Permission.values)}'); // read | write
-  print('15: ${15.describeFlags(Permission.values)}'); // read | write | execute | delete
+  print(
+      '15: ${15.describeFlags(Permission.values)}'); // read | write | execute | delete
 }

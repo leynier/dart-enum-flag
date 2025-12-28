@@ -197,7 +197,8 @@ void main() {
     group('addFlags', () {
       test('adds multiple flags at once', () {
         expect(noFlags.addFlags([EnumX.one, EnumX.two]), equals(3));
-        expect(noFlags.addFlags([EnumX.one, EnumX.two, EnumX.three]), equals(7));
+        expect(
+            noFlags.addFlags([EnumX.one, EnumX.two, EnumX.three]), equals(7));
         expect(1.addFlags([EnumX.two, EnumX.three]), equals(7));
       });
 
