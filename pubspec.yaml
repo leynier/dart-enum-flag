@@ -1,11 +1,11 @@
 name: enum_flag
 description: Package to create enums for flags using bitmask in Dart using a mixin and extensions.
 repository: https://github.com/leynier/dart-enum-flag
-version: 1.0.2
+version: 2.0.0
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dev_dependencies:
-  test: ^1.23.1
-  very_good_analysis: ^4.0.0+1
+  test: ^1.28.0
+  very_good_analysis: ^10.0.0
