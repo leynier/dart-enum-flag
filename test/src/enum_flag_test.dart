@@ -107,7 +107,7 @@ void main() {
       });
 
       test('returns typed list', () {
-        final List<EnumX> flags = 3.getFlags(EnumX.values);
+        final flags = 3.getFlags(EnumX.values);
         expect(flags, isA<List<EnumX>>());
       });
     });
@@ -198,7 +198,9 @@ void main() {
       test('adds multiple flags at once', () {
         expect(noFlags.addFlags([EnumX.one, EnumX.two]), equals(3));
         expect(
-            noFlags.addFlags([EnumX.one, EnumX.two, EnumX.three]), equals(7));
+          noFlags.addFlags([EnumX.one, EnumX.two, EnumX.three]),
+          equals(7),
+        );
         expect(1.addFlags([EnumX.two, EnumX.three]), equals(7));
       });
 
@@ -247,7 +249,7 @@ void main() {
       });
 
       test('returns correct value when not null', () {
-        const int? flags = 3;
+        const flags = 3;
         expect(flags.hasFlagOrFalse(EnumX.one), isTrue);
         expect(flags.hasFlagOrFalse(EnumX.three), isFalse);
       });
@@ -260,7 +262,7 @@ void main() {
       });
 
       test('returns correct value when not null', () {
-        const int? flags = 1;
+        const flags = 1;
         expect(flags.hasAnyFlagOrFalse([EnumX.one, EnumX.two]), isTrue);
         expect(flags.hasAnyFlagOrFalse([EnumX.three, EnumX.four]), isFalse);
       });
@@ -273,7 +275,7 @@ void main() {
       });
 
       test('returns correct value when not null', () {
-        const int? flags = 3;
+        const flags = 3;
         expect(flags.hasAllFlagsOrFalse([EnumX.one, EnumX.two]), isTrue);
         expect(flags.hasAllFlagsOrFalse([EnumX.one, EnumX.three]), isFalse);
       });
@@ -287,7 +289,7 @@ void main() {
       });
 
       test('returns value when not null', () {
-        const int? flags = 5;
+        const flags = 5;
         expect(flags.orNoFlags(), equals(5));
       });
     });

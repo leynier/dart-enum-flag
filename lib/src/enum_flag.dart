@@ -254,7 +254,8 @@ extension NullableEnumFlagExtension on int? {
   /// ```
   bool hasFlagOrFalse(EnumFlag flag) => this?.hasFlag(flag) ?? false;
 
-  /// Returns true if this value has any of the [flags] active, or false if null.
+  /// Returns true if this value has any of the [flags] active,
+  /// or false if null.
   ///
   /// Example:
   ///

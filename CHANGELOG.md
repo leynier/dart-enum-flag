@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.1
+
+### Improvements
+
+- **Code quality**: Fixed all linting issues to comply with `very_good_analysis` standards.
+- **CI/CD**: Updated GitHub Actions workflow to use latest versions (checkout@v4, codecov@v4).
+- **Documentation**: Improved inline documentation formatting.
+
 ## 2.0.0
 
 ### Breaking Changes
