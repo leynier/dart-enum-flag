@@ -3,259 +3,220 @@
 [![style: very good analysis][very_good_analysis_badge]][very_good_analysis_link]
 [![License: MIT][license_badge]][license_link]
 [![Tests](https://github.com/leynier/dart-enum-flag/actions/workflows/tests.yml/badge.svg)](https://github.com/leynier/dart-enum-flag/actions/workflows/tests.yml)
-[![Codecov](https://codecov.io/gh/leynier/dart-enum-flag/branch/main/graph/badge.svg?token=Llxe6rjE9g)](https://codecov.io/gh/leynier/dart-enum-flag)
+[![Codecov](https://codecov.io/gh/leynier/dart-enum-flag/branch/main/graph/badge.svg)](https://codecov.io/gh/leynier/dart-enum-flag)
 
-A Dart package to create enums for flags using bitmasks, with a mixin and extensions for easy flag manipulation.
+Portable, type-safe enum flags for Dart. Use the familiar `int` extensions or
+an immutable `FlagSet<T>` while keeping the same unsigned 32-bit representation
+on the Dart VM and JavaScript.
 
 ## Features
 
-- 🎯 **Type-safe bitmask values** via `EnumFlag` mixin
-- ⚡ **Flag manipulation**: `addFlag()`, `removeFlag()`, `toggleFlag()`
-- 🔍 **Flag checking**: `hasFlag()`, `hasAnyFlag()`, `hasAllFlags()`
-- 📋 **Flag retrieval**: `getFlags()` with generic type support
-- 🛠️ **Debugging utilities**: `label`, `binary`, `describeFlags()`
-- 📦 **Constants**: `noFlags` for empty state, `all` for combined flags
-
-## Use Cases
-
-Bitmask flags are ideal when you need to store multiple boolean options in a single integer value. Common scenarios include:
-
-### 🔐 File/Resource Permissions
-
-```dart
-enum Permission with EnumFlag { read, write, execute, delete }
-
-// Store user permissions in a single int (e.g., in a database)
-final adminPermissions = Permission.values.all; // 15
-final guestPermissions = [Permission.read].flag; // 1
-
-// Check access
-if (userPermissions.hasFlag(Permission.write)) {
-  // Allow editing
-}
-```
-
-### 👥 User Roles & Capabilities
-
-```dart
-enum Role with EnumFlag { viewer, editor, moderator, admin }
-
-// Users can have multiple roles
-final userRoles = [Role.editor, Role.moderator].flag;
-
-if (userRoles.hasAnyFlag([Role.admin, Role.moderator])) {
-  // Show moderation panel
-}
-```
-
-### 🚀 Feature Flags
-
-```dart
-enum Feature with EnumFlag { darkMode, notifications, analytics, betaFeatures }
-
-// Enable features per user or environment
-var enabledFeatures = noFlags;
-enabledFeatures = enabledFeatures.addFlag(Feature.darkMode);
-enabledFeatures = enabledFeatures.addFlag(Feature.notifications);
-
-// Check feature availability
-if (enabledFeatures.hasFlag(Feature.betaFeatures)) {
-  // Show experimental UI
-}
-```
-
-### 🎮 Game States & Attributes
-
-```dart
-enum StatusEffect with EnumFlag { poisoned, burning, frozen, stunned, blessed }
-
-// Apply multiple status effects to a character
-var playerStatus = noFlags;
-playerStatus = playerStatus.addFlag(StatusEffect.poisoned);
-playerStatus = playerStatus.addFlag(StatusEffect.burning);
-
-// Check and display active effects
-print('Active: ${playerStatus.describeFlags(StatusEffect.values)}');
-// Output: 'Active: poisoned | burning'
-
-// Remove effect when healed
-playerStatus = playerStatus.removeFlag(StatusEffect.poisoned);
-```
-
-### 📡 API Response Filtering
-
-```dart
-enum IncludeField with EnumFlag { metadata, timestamps, relations, stats }
-
-// Client requests specific fields
-final requestedFields = [IncludeField.metadata, IncludeField.stats].flag;
-
-// Server checks what to include
-if (requestedFields.hasFlag(IncludeField.relations)) {
-  // Load and include related entities
-}
-```
+- Portable masks from `0` through `0xFFFFFFFF`.
+- Stable explicit bit positions for databases and APIs.
+- Convenient index-based flags for local, non-persisted state.
+- Typed immutable `FlagSet<T>` operations.
+- Backwards-compatible extensions on `int`, `int?`, and `Iterable`.
+- Preservation and reporting of unknown bits for forward compatibility.
+- Explicit conversion to and from signed 32-bit storage.
 
 ## Installation
 
 ```yaml
 dependencies:
-  enum_flag: ^2.0.0
+  enum_flag: ^3.0.0
 ```
 
-## Usage
+## Defining flags
 
-### Basic Setup
+### Stable explicit positions
+
+Declare `bitIndex` explicitly when a mask is persisted or exchanged with
+another application. Members can then be reordered without changing their
+stored values.
 
 ```dart
 import 'package:enum_flag/enum_flag.dart';
 
 enum Permission with EnumFlag {
-  read,    // value: 1 (binary: 00000001)
-  write,   // value: 2 (binary: 00000010)
-  execute, // value: 4 (binary: 00000100)
-  delete,  // value: 8 (binary: 00001000)
+  read(0),
+  write(1),
+  execute(2),
+  delete(3);
+
+  const Permission(this.bitIndex);
+
+  @override
+  final int bitIndex;
 }
 ```
 
-### Getting Bitmask Values
+Every position must be unique and between 0 and 31. Invalid positions throw a
+`RangeError` in every build mode, including JavaScript production builds.
+
+### Index-based positions
+
+For state that is never persisted, the mixin uses the declaration index by
+default:
 
 ```dart
-print(Permission.read.value);   // 1
-print(Permission.write.value);  // 2
-print(Permission.read.binary);  // '00000001'
-print(Permission.read.label);   // 'read'
-```
-
-### Combining Flags
-
-```dart
-// Using bitwise OR
-final flags = Permission.read.value | Permission.write.value; // 3
-
-// Using list extension
-final flags = [Permission.read, Permission.write].flag; // 3
-
-// Get all enum values combined
-final allFlags = Permission.values.all; // 15
-```
-
-### Checking Flags
-
-```dart
-final flags = 3; // read | write
-
-flags.hasFlag(Permission.read);     // true
-flags.hasFlag(Permission.execute);  // false
-
-flags.hasAnyFlag([Permission.read, Permission.execute]); // true
-flags.hasAllFlags([Permission.read, Permission.write]);  // true
-```
-
-### Retrieving Active Flags
-
-```dart
-final flags = 3;
-List<Permission> active = flags.getFlags(Permission.values);
-print(active); // [Permission.read, Permission.write]
-```
-
-### Manipulating Flags
-
-```dart
-var flags = noFlags; // Start with no flags (0)
-
-flags = flags.addFlag(Permission.read);    // 1
-flags = flags.addFlag(Permission.write);   // 3
-flags = flags.removeFlag(Permission.read); // 2
-flags = flags.toggleFlag(Permission.write); // 0
-```
-
-### Bulk Operations
-
-```dart
-// Add multiple flags at once
-var flags = noFlags.addFlags([Permission.read, Permission.write, Permission.execute]); // 7
-
-// Remove multiple flags at once
-flags = flags.removeFlags([Permission.read, Permission.execute]); // 2
-
-// Toggle multiple flags at once
-flags = flags.toggleFlags([Permission.write, Permission.delete]); // 8
-```
-
-### Null-Safe Operations
-
-```dart
-int? userFlags = getUserFromDatabase()?.permissions; // May be null
-
-// Safe flag checking (returns false if null)
-if (userFlags.hasFlagOrFalse(Permission.read)) {
-  // User has read permission
+enum LocalFeature with EnumFlag {
+  compactMode, // bitIndex: 0, value: 1
+  diagnostics, // bitIndex: 1, value: 2
 }
-
-// Safe with multiple flags
-userFlags.hasAnyFlagOrFalse([Permission.read, Permission.write]); // false if null
-userFlags.hasAllFlagsOrFalse([Permission.read, Permission.write]); // false if null
-
-// Get value or default to noFlags
-final safeFlags = userFlags.orNoFlags(); // 0 if null
 ```
 
-### Debugging
+If these values are persisted, never reorder existing members or insert new
+members before them. Only append new members, or migrate to explicit positions.
+
+## Typed FlagSet API
+
+Create an immutable, typed set from flags or from an unsigned mask:
 
 ```dart
-print(3.describeFlags(Permission.values)); // 'read | write'
-print(0.describeFlags(Permission.values)); // 'none'
+final permissions = [Permission.read, Permission.execute].flagSet;
+final restored = FlagSet<Permission>.fromBits(5);
+
+print(permissions == restored); // true
+print(permissions.bits); // 5
+print(permissions.contains(Permission.read)); // true
+print(permissions.activeFlags(Permission.values));
+// [Permission.read, Permission.execute]
 ```
 
-## API Reference
+All updates return a new value:
 
-### `EnumFlag` Mixin
+```dart
+final updated = permissions
+    .add(Permission.write)
+    .remove(Permission.execute)
+    .toggle(Permission.delete);
 
-| Property | Description |
-|----------|-------------|
-| `value` | Bitmask value (`1 << index`) |
-| `label` | Enum name without prefix |
-| `binary` | 8-character binary string |
+print(updated.bits); // 11
+```
 
-### `int` Extensions
+Bulk operations are also available:
 
-| Method | Description |
-|--------|-------------|
-| `hasFlag(flag)` | Check if single flag is active |
-| `hasAnyFlag(flags)` | Check if any flag is active |
-| `hasAllFlags(flags)` | Check if all flags are active |
-| `getFlags<T>(flags)` | Get list of active flags |
-| `addFlag(flag)` | Return value with flag added |
-| `removeFlag(flag)` | Return value with flag removed |
-| `toggleFlag(flag)` | Return value with flag toggled |
-| `addFlags(flags)` | Add multiple flags at once |
-| `removeFlags(flags)` | Remove multiple flags at once |
-| `toggleFlags(flags)` | Toggle multiple flags at once |
-| `describeFlags<T>(flags)` | Human-readable description |
+```dart
+final updated = const FlagSet<Permission>.empty()
+    .addAll([Permission.read, Permission.write])
+    .toggleAll([Permission.write, Permission.execute])
+    .removeAll([Permission.read]);
 
-### `int?` Extensions (Null-Safe)
+print(updated.bits); // 4
+```
 
-| Method | Description |
-|--------|-------------|
-| `hasFlagOrFalse(flag)` | Check flag, returns false if null |
-| `hasAnyFlagOrFalse(flags)` | Check any flag, returns false if null |
-| `hasAllFlagsOrFalse(flags)` | Check all flags, returns false if null |
-| `orNoFlags()` | Returns value or 0 if null |
+`FlagSet<T>` stores only the mask. Pass the enum's `values` list when an
+operation needs to interpret all known members.
 
-### Constants & Extensions
+## int API
 
-| Name | Description |
-|------|-------------|
-| `noFlags` | Constant `0` for empty state |
-| `Iterable<EnumFlag>.flag` | Combined bitmask value |
-| `Iterable<EnumFlag>.all` | Alias for `flag` |
+The v2-style extensions remain first-class APIs:
 
-## Limitations
+```dart
+var bits = noFlags;
+bits = bits.addFlag(Permission.read);
+bits = bits.addFlags([Permission.write, Permission.execute]);
+bits = bits.removeFlag(Permission.execute);
 
-- Maximum of 32 enum values (due to Dart's 32-bit integer operations in JavaScript)
-- An assertion will fail in debug mode if you exceed this limit
+print(bits.hasFlag(Permission.read)); // true
+print(bits.hasAnyFlag([Permission.execute, Permission.write])); // true
+print(bits.hasAllFlags([Permission.read, Permission.write])); // true
+print(bits.getFlags(Permission.values));
+// [Permission.read, Permission.write]
+```
+
+Combine iterables into either representation:
+
+```dart
+final bits = [Permission.read, Permission.write].flag; // 3
+final allBits = Permission.values.all; // 15
+final set = [Permission.read, Permission.write].flagSet;
+```
+
+Nullable masks retain the v2 helpers:
+
+```dart
+int? storedBits;
+
+storedBits.hasFlagOrFalse(Permission.read); // false
+storedBits.hasAnyFlagOrFalse(Permission.values); // false
+storedBits.hasAllFlagsOrFalse(Permission.values); // false
+storedBits.orNoFlags(); // 0
+```
+
+## Unknown bits
+
+Masks from a newer producer may contain positions the current enum does not
+know. They are preserved through `FlagSet` operations and reported explicitly:
+
+```dart
+final permissions = FlagSet<Permission>.fromBits(0x13);
+
+print(permissions.unknownBits(Permission.values)); // 16
+print(permissions.describe(Permission.values));
+// read | write | unknown(0x00000010)
+```
+
+The same behavior is available through `int.getUnknownBits()` and
+`int.describeFlags()`.
+
+## Signed 32-bit storage
+
+The canonical representation is unsigned. Use explicit helpers for a database
+column or protocol that represents the same bits as a signed 32-bit integer:
+
+```dart
+final stored = FlagSet<Permission>.fromSigned32(-1);
+
+print(stored.bits); // 4294967295 (0xFFFFFFFF)
+print(stored.signedBits); // -1
+```
+
+Values outside the corresponding signed or unsigned 32-bit range throw a
+`RangeError`; they are never normalized silently.
+
+## Debug properties
+
+```dart
+print(Permission.read.bitIndex); // 0
+print(Permission.read.value); // 1
+print(Permission.read.label); // read
+print(Permission.read.binary); // 00000001
+```
+
+`label` always uses the enum declaration name, even if the enum overrides
+`toString()`. `binary` is padded to at least eight characters and grows up to
+32 characters for higher positions.
+
+## Migrating from v2
+
+Most calls continue to compile. Review these intentional changes:
+
+- Masks and receivers must be unsigned 32-bit values. Convert signed storage
+  with `FlagSet.fromSigned32`.
+- A flag outside positions 0-31 now throws in release as well as debug builds.
+- `label` uses the declaration name instead of parsing `toString()`.
+- `describeFlags` reports unknown bits instead of returning `none` for a
+  non-zero unknown mask.
+- `getFlags` and `describeFlags` now accept any `Iterable<T>`.
+- Persisted index-based enums should override `bitIndex` before members are
+  reordered or inserted.
+
+## Development and coverage
+
+Run the same coverage gate used by CI:
+
+```shell
+dart test --coverage=coverage
+dart run coverage:format_coverage \
+  --lcov \
+  --in=coverage \
+  --out=coverage/lcov.info \
+  --report-on=lib
+dart run tool/check_coverage.dart
+```
+
+The final command fails unless every executable line under `lib` is covered.
 
 ## License
 

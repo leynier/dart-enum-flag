@@ -1,5 +1,32 @@
 # Changelog
 
+## 3.0.0
+
+### Breaking Changes
+
+- Masks passed to the `int` extensions must be unsigned 32-bit values.
+- Invalid flag positions now throw `RangeError` in all build modes.
+- `label` uses the enum declaration name instead of parsing `toString()`.
+- Descriptions now include unknown bits instead of reporting a non-zero
+  unknown mask as `none`.
+
+### New Features
+
+- Added immutable, typed `FlagSet<T>` values with query and update operations.
+- Added explicit `bitIndex` overrides for stable persisted masks while keeping
+  index-based assignment as the default.
+- Added unknown-bit inspection and preservation.
+- Added checked signed 32-bit storage conversions.
+- Added typed `Iterable<T>.flagSet` construction.
+
+### Improvements
+
+- `getFlags` and `describeFlags` now accept any `Iterable<T>`.
+- Added VM and JavaScript coverage for the portable 32-bit boundary.
+- Enforced 100% line coverage in CI with a reproducible local coverage gate.
+- Kept the package compatible with Dart 3.0 while allowing current analysis
+  and test tooling on newer SDKs.
+
 ## 2.0.1
 
 ### Improvements
