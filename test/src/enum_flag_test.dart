@@ -8,6 +8,61 @@ enum EnumX with EnumFlag {
   four,
 }
 
+enum CustomStringEnum with EnumFlag {
+  one;
+
+  @override
+  String toString() => 'custom';
+}
+
+enum ExplicitEnum with EnumFlag {
+  third(2),
+  first(0),
+  second(1);
+
+  const ExplicitEnum(this.bitIndex);
+
+  @override
+  final int bitIndex;
+}
+
+enum InvalidLowEnum with EnumFlag {
+  invalid(-1);
+
+  const InvalidLowEnum(this.bitIndex);
+
+  @override
+  final int bitIndex;
+}
+
+enum InvalidHighEnum with EnumFlag {
+  invalid(32);
+
+  const InvalidHighEnum(this.bitIndex);
+
+  @override
+  final int bitIndex;
+}
+
+enum DuplicateEnum with EnumFlag {
+  first(0),
+  second(0);
+
+  const DuplicateEnum(this.bitIndex);
+
+  @override
+  final int bitIndex;
+}
+
+enum BoundaryEnum with EnumFlag {
+  bit31(31);
+
+  const BoundaryEnum(this.bitIndex);
+
+  @override
+  final int bitIndex;
+}
+
 void main() {
   group('EnumFlag mixin', () {
     test('value returns correct bitmask', () {
@@ -20,6 +75,37 @@ void main() {
     test('label returns enum name without prefix', () {
       expect(EnumX.one.label, equals('one'));
       expect(EnumX.two.label, equals('two'));
+    });
+
+    test('label is independent from an overridden toString', () {
+      expect(CustomStringEnum.one.toString(), equals('custom'));
+      expect(CustomStringEnum.one.label, equals('one'));
+    });
+
+    test('explicit bitIndex remains stable regardless of declaration order',
+        () {
+      expect(ExplicitEnum.first.value, equals(1));
+      expect(ExplicitEnum.second.value, equals(2));
+      expect(ExplicitEnum.third.value, equals(4));
+    });
+
+    test('supports the portable upper boundary', () {
+      expect(BoundaryEnum.bit31.value, equals(0x80000000));
+      expect(BoundaryEnum.bit31.binary, hasLength(32));
+      expect(noFlags.addFlag(BoundaryEnum.bit31), equals(0x80000000));
+      expect(
+        0xFFFFFFFF.removeFlag(BoundaryEnum.bit31),
+        equals(0x7FFFFFFF),
+      );
+      expect(
+        0xFFFFFFFF.toggleFlag(BoundaryEnum.bit31),
+        equals(0x7FFFFFFF),
+      );
+    });
+
+    test('rejects bit indexes outside the portable range', () {
+      expect(() => InvalidLowEnum.invalid.value, throwsRangeError);
+      expect(() => InvalidHighEnum.invalid.value, throwsRangeError);
     });
 
     test('binary returns 8-character binary representation', () {
@@ -165,6 +251,32 @@ void main() {
       test('returns "none" when no flags active', () {
         expect(0.describeFlags(EnumX.values), equals('none'));
       });
+
+      test('includes unknown bits instead of describing them as none', () {
+        expect(
+          0x10.describeFlags(EnumX.values),
+          equals('unknown(0x00000010)'),
+        );
+        expect(
+          0x11.describeFlags(EnumX.values),
+          equals('one | unknown(0x00000010)'),
+        );
+      });
+    });
+
+    group('portable mask validation', () {
+      test('rejects negative and larger-than-32-bit receivers', () {
+        expect(() => (-1).hasFlag(EnumX.one), throwsRangeError);
+        expect(() => 0x100000000.addFlag(EnumX.one), throwsRangeError);
+        expect(() => (-1).hasAnyFlag([]), throwsRangeError);
+        expect(() => (-1).hasAllFlags([]), throwsRangeError);
+        expect(() => (-1).getFlags(EnumX.values), throwsRangeError);
+      });
+
+      test('reports unknown bits', () {
+        expect(0x10.getUnknownBits(EnumX.values), equals(0x10));
+        expect(0x13.getUnknownBits(EnumX.values), equals(0x10));
+      });
     });
   });
 
@@ -190,6 +302,117 @@ void main() {
       test('is equivalent to flag', () {
         expect(EnumX.values.all, equals(EnumX.values.flag));
       });
+    });
+
+    test('rejects duplicate positions assigned to different enum values', () {
+      expect(() => DuplicateEnum.values.flag, throwsStateError);
+    });
+
+    test('creates a typed FlagSet', () {
+      final flags = [EnumX.one, EnumX.three].flagSet;
+      expect(flags, isA<FlagSet<EnumX>>());
+      expect(flags.bits, equals(5));
+    });
+  });
+
+  group('FlagSet', () {
+    test('constructs empty, from bits, and from flags', () {
+      const empty = FlagSet<EnumX>.empty();
+      final fromBits = FlagSet<EnumX>.fromBits(3);
+      final fromFlags = FlagSet<EnumX>.of(const [EnumX.one, EnumX.two]);
+
+      expect(empty.isEmpty, isTrue);
+      expect(empty.isNotEmpty, isFalse);
+      expect(fromBits, equals(fromFlags));
+      expect(fromFlags.hashCode, equals(fromBits.hashCode));
+      expect(
+        fromFlags,
+        isNot(equals(FlagSet<CustomStringEnum>.fromBits(3))),
+      );
+      expect(fromFlags.toString(), equals('FlagSet<EnumX>(0x00000003)'));
+    });
+
+    test('rejects masks outside the unsigned 32-bit range', () {
+      expect(() => FlagSet<EnumX>.fromBits(-1), throwsRangeError);
+      expect(
+        () => FlagSet<EnumX>.fromBits(0x100000000),
+        throwsRangeError,
+      );
+    });
+
+    test('checks individual, any, and all flags', () {
+      final flags = FlagSet<EnumX>.fromBits(3);
+
+      expect(flags.contains(EnumX.one), isTrue);
+      expect(flags.contains(EnumX.three), isFalse);
+      expect(flags.containsAny([EnumX.two, EnumX.three]), isTrue);
+      expect(flags.containsAll([EnumX.one, EnumX.two]), isTrue);
+      expect(flags.containsAll([EnumX.one, EnumX.three]), isFalse);
+    });
+
+    test('returns active and unknown flags without losing unknown bits', () {
+      final flags = FlagSet<EnumX>.fromBits(0x13);
+
+      expect(flags.activeFlags(EnumX.values), [EnumX.one, EnumX.two]);
+      expect(flags.unknownBits(EnumX.values), equals(0x10));
+      expect(
+        FlagSet<EnumX>.fromBits(0x80000000).unknownBits(EnumX.values),
+        equals(0x80000000),
+      );
+      expect(
+        flags.describe(EnumX.values),
+        equals('one | two | unknown(0x00000010)'),
+      );
+      expect(flags.add(EnumX.three).unknownBits(EnumX.values), equals(0x10));
+    });
+
+    test('performs immutable single-flag operations', () {
+      const original = FlagSet<EnumX>.empty();
+      final added = original.add(EnumX.one);
+      final toggled = added.toggle(EnumX.two);
+      final removed = toggled.remove(EnumX.one);
+
+      expect(original.bits, equals(0));
+      expect(added.bits, equals(1));
+      expect(toggled.bits, equals(3));
+      expect(removed.bits, equals(2));
+    });
+
+    test('performs immutable bulk operations', () {
+      const original = FlagSet<EnumX>.empty();
+      final added = original.addAll([EnumX.one, EnumX.two, EnumX.three]);
+      final removed = added.removeAll([EnumX.one, EnumX.three]);
+      final toggled = removed.toggleAll([EnumX.two, EnumX.four]);
+
+      expect(added.bits, equals(7));
+      expect(removed.bits, equals(2));
+      expect(toggled.bits, equals(8));
+    });
+
+    test('converts signed 32-bit storage representations explicitly', () {
+      expect(FlagSet<EnumX>.fromSigned32(0).bits, equals(0));
+      expect(
+        FlagSet<EnumX>.fromSigned32(0x7FFFFFFF).bits,
+        equals(0x7FFFFFFF),
+      );
+      expect(
+        FlagSet<EnumX>.fromSigned32(-0x80000000).bits,
+        equals(0x80000000),
+      );
+      expect(FlagSet<EnumX>.fromSigned32(-1).bits, equals(0xFFFFFFFF));
+      expect(FlagSet<EnumX>.fromBits(0x80000000).signedBits, -0x80000000);
+      expect(FlagSet<EnumX>.fromBits(0xFFFFFFFF).signedBits, -1);
+    });
+
+    test('rejects values outside the signed 32-bit range', () {
+      expect(
+        () => FlagSet<EnumX>.fromSigned32(-0x80000001),
+        throwsRangeError,
+      );
+      expect(
+        () => FlagSet<EnumX>.fromSigned32(0x80000000),
+        throwsRangeError,
+      );
     });
   });
 
@@ -233,6 +456,10 @@ void main() {
         expect(0.toggleFlags([EnumX.one, EnumX.two]), equals(3));
         expect(1.toggleFlags([EnumX.one, EnumX.two]), equals(2));
         expect(3.toggleFlags([EnumX.one, EnumX.two]), equals(0));
+      });
+
+      test('applies repeated flags sequentially for v2 compatibility', () {
+        expect(0.toggleFlags([EnumX.one, EnumX.one]), equals(0));
       });
 
       test('toggling empty list returns same value', () {

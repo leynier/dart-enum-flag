@@ -1,84 +1,62 @@
+// This executable demonstrates the package by printing each result.
 // ignore_for_file: avoid_print
 
 import 'package:enum_flag/enum_flag.dart';
 
+// Explicit positions are recommended for persisted or external masks.
 enum Permission with EnumFlag {
-  read,
-  write,
-  execute,
-  delete,
+  read(0),
+  write(1),
+  execute(2),
+  delete(3);
+
+  const Permission(this.bitIndex);
+
+  @override
+  final int bitIndex;
+}
+
+// Index-based flags are convenient for values that are never persisted.
+enum LocalFeature with EnumFlag {
+  compactMode,
+  diagnostics,
 }
 
 void main() {
-  // Basic bitmask values
-  print('=== Basic Values ===');
+  print('=== Stable bit values ===');
   print('read.value: ${Permission.read.value}'); // 1
   print('write.value: ${Permission.write.value}'); // 2
-  print('execute.value: ${Permission.execute.value}'); // 4
-  print('delete.value: ${Permission.delete.value}'); // 8
-
-  // Convenience properties
-  print('\n=== Convenience Properties ===');
-  print('read.label: ${Permission.read.label}'); // read
-  print('read.binary: ${Permission.read.binary}'); // 00000001
   print('execute.binary: ${Permission.execute.binary}'); // 00000100
+  print('delete.label: ${Permission.delete.label}'); // delete
 
-  // Combining flags
-  print('\n=== Combining Flags ===');
-  final readWrite = Permission.read.value | Permission.write.value;
-  print('read | write = $readWrite'); // 3
+  print('\n=== int API ===');
+  final readWrite = [Permission.read, Permission.write].flag;
+  print('read | write: $readWrite'); // 3
+  print('has read: ${readWrite.hasFlag(Permission.read)}'); // true
+  print('has execute: ${readWrite.hasFlag(Permission.execute)}'); // false
   print(
-      '[read, write].flag = ${[Permission.read, Permission.write].flag}'); // 3
-  print('All permissions: ${Permission.values.all}'); // 15
+    'active: ${readWrite.describeFlags(Permission.values)}',
+  ); // read | write
 
-  // Checking flags
-  print('\n=== Checking Flags ===');
-  print(
-      '$readWrite hasFlag(read): ${readWrite.hasFlag(Permission.read)}'); // true
-  print(
-      '$readWrite hasFlag(execute): ${readWrite.hasFlag(Permission.execute)}'); // false
+  print('\n=== Typed FlagSet API ===');
+  final permissions = [Permission.read, Permission.execute].flagSet;
+  final updated = permissions
+      .add(Permission.write)
+      .remove(Permission.execute)
+      .toggle(Permission.delete);
+  print('bits: ${updated.bits}'); // 11
+  print('contains write: ${updated.contains(Permission.write)}'); // true
+  print('active: ${updated.activeFlags(Permission.values)}');
 
-  // hasAnyFlag and hasAllFlags
-  print('\n=== hasAnyFlag / hasAllFlags ===');
-  final flags = 3; // read | write
-  print('$flags hasAnyFlag([read, execute]): '
-      '${flags.hasAnyFlag([Permission.read, Permission.execute])}'); // true
-  print('$flags hasAllFlags([read, write]): '
-      '${flags.hasAllFlags([Permission.read, Permission.write])}'); // true
-  print('$flags hasAllFlags([read, execute]): '
-      '${flags.hasAllFlags([Permission.read, Permission.execute])}'); // false
+  print('\n=== Unknown and signed bits ===');
+  final withUnknown = FlagSet<Permission>.fromBits(0x13);
+  print(withUnknown.describe(Permission.values));
+  // read | write | unknown(0x00000010)
 
-  // Getting active flags
-  print('\n=== Getting Flags ===');
-  print(
-      '$flags getFlags: ${flags.getFlags(Permission.values)}'); // [read, write]
-  print(
-      '7.getFlags: ${7.getFlags(Permission.values)}'); // [read, write, execute]
+  final signed = FlagSet<Permission>.fromSigned32(-1);
+  print('unsigned: ${signed.bits}'); // 4294967295
+  print('signed: ${signed.signedBits}'); // -1
 
-  // Manipulating flags
-  print('\n=== Manipulating Flags ===');
-  var userPermissions = noFlags;
-  print('Initial: $userPermissions (noFlags)');
-
-  userPermissions = userPermissions.addFlag(Permission.read);
-  print('After addFlag(read): $userPermissions');
-
-  userPermissions = userPermissions.addFlag(Permission.write);
-  print('After addFlag(write): $userPermissions');
-
-  userPermissions = userPermissions.removeFlag(Permission.read);
-  print('After removeFlag(read): $userPermissions');
-
-  userPermissions = userPermissions.toggleFlag(Permission.execute);
-  print('After toggleFlag(execute): $userPermissions');
-
-  userPermissions = userPermissions.toggleFlag(Permission.execute);
-  print('After toggleFlag(execute) again: $userPermissions');
-
-  // Describing flags (useful for debugging)
-  print('\n=== Describing Flags ===');
-  print('0: ${0.describeFlags(Permission.values)}'); // none
-  print('3: ${3.describeFlags(Permission.values)}'); // read | write
-  print(
-      '15: ${15.describeFlags(Permission.values)}'); // read | write | execute | delete
+  print('\n=== Index-based local flags ===');
+  print(LocalFeature.values.all); // 3
 }
