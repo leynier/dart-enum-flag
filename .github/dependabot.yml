@@ -1,0 +1,23 @@
+version: 2
+updates:
+  - package-ecosystem: pub
+    directory: "/"
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      monthly-batch:
+        applies-to: version-updates
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      monthly-batch:
+        applies-to: version-updates
+        patterns: ["*"]
